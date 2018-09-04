@@ -102,12 +102,56 @@ RUN cd ~/tools \
     && git clone --depth 1 https://github.com/radare/radare2 && cd radare2 \
     && ./sys/install.sh
 
-# Install dotfiles
-RUN cd ~/tools \
-    && git clone --depth 1 https://github.com/Grazfather/dotfiles.git \
-    && bash ~/tools/dotfiles/init.sh
+# zsh
+RUN apt update \
+    && apt install -y zsh \
+    && apt clean \
+    && chsh -s $(which zsh)
 
-RUN echo 'export PS1="[\[\e[34m\]\u\[\e[0m\]@\[\e[33m\]\H\[\e[0m\]:\w]\$ "' >> /root/.bashrc
+RUN /bin/sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || true \
+    && sed -i 's/ZSH_THEME="robbyrussell"/ZSH_THEME="agnoster"/g' /root/.zshrc
+
+# Install dotfiles
+# RUN cd ~/tools \
+#     && git clone --depth 1 https://github.com/Grazfather/dotfiles.git \
+#     && bash ~/tools/dotfiles/init.sh
+
+# RUN echo 'export PS1="[\[\e[34m\]\u\[\e[0m\]@\[\e[33m\]\H\[\e[0m\]:\w]\$ "' >> /root/.zshrc
+
+# Bat
+RUN cd ~/tools \
+    && curl -s https://api.github.com/repos/sharkdp/bat/releases/latest \
+        | grep "browser_download_url.*deb" \
+        | cut -d : -f 2,3 \
+        | grep -v musl \
+        | grep amd64 \
+        | tr -d '"\"' \
+        | wget -qi - -O bat.deb \
+    && sudo dpkg -i bat.deb
+# fzf
+RUN cd ~/tools \
+    && rm -rf fzf \
+    && git clone --depth 1 https://github.com/junegunn/fzf.git fzf \
+    && fzf/install
+
+RUN echo "\n# fzf aliases" >> /root/.zshrc \
+    && echo "alias preview=\"fzf --preview 'bat --color \\\"always\\\" {}'\"" >> /root/.zshrc \
+    && echo "export FZF_DEFAULT_OPTS=\"--bind='ctrl-o:execute(vim {})+abort'\"" >> /root/.zshrc
+
+# virtualenvwrapper
+RUN pip install virtualenvwrapper
+
+RUN echo "\n # virtualenvwrapper" >> /root/.zshrc \
+    && echo "export WORKON_HOME=$HOME/.virtualenvs" >> /root/.zshrc \
+    && echo "export PROJECT_HOME=$HOME/Devel" >> /root/.zshrc \
+    && echo "source /usr/local/bin/virtualenvwrapper.sh" >> /root/.zshrc
+
+# angr
+RUN cd ~/tools \
+    && /bin/bash -c "source /root/.zshrc && source /usr/local/bin/virtualenvwrapper.sh && mkvirtualenv angr && pip install angr"
+
+# tldr
+RUN pip install tldr
 
 # work env
-WORKDIR /root/code
+WORKDIR /root/ctfs
