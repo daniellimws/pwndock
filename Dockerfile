@@ -153,5 +153,11 @@ RUN cd ~/tools \
 # tldr
 RUN pip install tldr
 
+# vimrc
+RUN apt upgrade -y vim \
+    && git clone --depth=1 https://github.com/amix/vimrc.git ~/.vim_runtime \
+    && /bin/sh ~/.vim_runtime/install_awesome_vimrc.sh \
+    && /bin/bash -c "echo inoremap jk <ESC> >> ~/.vimrc"
+
 # work env
 WORKDIR /root/ctfs
